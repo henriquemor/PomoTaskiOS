@@ -163,7 +163,7 @@
   function resetTimer() {
     clearInterval(timer);
     timerDuration = parseInt(durationInput.value) * 60;
-    updateTimerDisplay(timerDuration);
+    timerDisplay.innerText = formatTime(timerDuration);
     startStopBtn.innerText = "Start";
   }
 
@@ -383,7 +383,7 @@ function selectTask(index) {
   addTaskBtn.addEventListener("click", addTask);
 
   renderTasks();
-  timerDisplay.innerText = formatTime(remainingTime);
+  timerDisplay.innerText = formatTime(timerDuration);
 });
 
 
