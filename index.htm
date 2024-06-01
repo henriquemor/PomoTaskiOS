@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        #timer {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .task-list {
+            list-style-type: none;
+            padding: 0;
+            width: 100%;
+            max-width: 300px;
+        }
+        .task-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border: 1px solid #ccc;
+            margin-bottom: 5px;
+            cursor: pointer;
+        }
+        .task-item.active {
+            background-color: #e0e0e0;
+        }
+        .task-item span {
+            flex-grow: 1;
+        }
+        .task-controls {
+            display: flex;
+        }
+        .task-controls button {
+            margin-left: 5px;
+        }
+    </style>
+  <script>
+
+
+
+
+    document.addEventListener("DOMContentLoaded", () => {
+  const timerDisplay = document.getElementById("timer");
+  const startStopBtn = document.getElementById("startStopBtn");
+  const resetBtn = document.getElementById("resetBtn");
+  const durationInput = document.getElementById("duration");
+  const taskListElement = document.getElementById("taskList");
+  const newTaskInput = document.getElementById("newTask");
+  const addTaskBtn = document.getElementById("addTaskBtn");
+
+  let tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  let activeTaskIndex = localStorage.getItem("activeTaskIndex") || 0;
+  let timerDuration = parseInt(durationInput.value) * 60;
+  let timer;
+  let timerEnd;
+  let isTimerRunning = false;
+
+  function renderTasks() {
+    taskListElement.innerHTML = "";
+    tasks.forEach((task, index) => {
+      const taskItem = document.createElement("li");
+      taskItem.className = `task-item ${index == activeTaskIndex ? "active" : ""}`;
+      taskItem.innerHTML = `<span>${task.name} - ${formatTime(task.timeSpent)}</span>`;
+      taskItem.onclick = () => selectTask(index);
+
+      const taskControls = document.createElement("div");
+      taskControls.className = "task-controls";
+
+      const editBtn = document.createElement("button");
+      editBtn.innerText = "Edit";
+      editBtn.onclick = (e) => {
+        e.stopPropagation();
+        editTask(index);
+      };
+      taskControls.appendChild(editBtn);
+
+      const resetBtn = document.createElement("button");
+      resetBtn.innerText = "Reset Time";
+      resetBtn.onclick = (e) => {
+        e.stopPropagation();
+        resetTaskTime(index);
+      };
+      taskControls.appendChild(resetBtn);
+
+      const upBtn = document.createElement("button");
+      upBtn.innerText = "↑";
+      upBtn.onclick = (e) => {
+        e.stopPropagation();
+        moveTaskUp(index);
+      };
+      taskControls.appendChild(upBtn);
+
+      const downBtn = document.createElement("button");
+      downBtn.innerText = "↓";
+      downBtn.onclick = (e) => {
+        e.stopPropagation();
+        moveTaskDown(index);
+      };
+      taskControls.appendChild(downBtn);
+
+      taskItem.appendChild(taskControls);
+      taskListElement.appendChild(taskItem);
+    });
+  }
+
+  function selectTask(index) {
+    activeTaskIndex = index;
+    localStorage.setItem("activeTaskIndex", activeTaskIndex);
+    renderTasks();
+  }
+
+  function addTask() {
+    const taskName = newTaskInput.value.trim();
+    if (taskName) {
+      tasks.push({ name: taskName, timeSpent: 0 });
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      newTaskInput.value = "";
+      renderTasks();
+    }
+  }
+
+  function editTask(index) {
+    const newName = prompt("Edit task name:", tasks[index].name);
+    if (newName) {
+      tasks[index].name = newName;
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      renderTasks();
+    }
+  }
+
+  function resetTaskTime(index) {
+    tasks[index].timeSpent = 0;
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    renderTasks();
+  }
+
+  function moveTaskUp(index) {
+    if (index > 0) {
+      const task = tasks.splice(index, 1)[0];
+      tasks.splice(index - 1, 0, task);
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      if (activeTaskIndex === index) {
+        activeTaskIndex--;
+      } else if (activeTaskIndex === index - 1) {
+        activeTaskIndex++;
+      }
+      localStorage.setItem("activeTaskIndex", activeTaskIndex);
+      renderTasks();
+    }
+  }
+
+  function moveTaskDown(index) {
+    if (index < tasks.length - 1) {
+      const task = tasks.splice(index, 1)[0];
+      tasks.splice(index + 1, 0, task);
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      if (activeTaskIndex === index) {
+        activeTaskIndex++;
+      } else if (activeTaskIndex === index + 1) {
+        activeTaskIndex--;
+      }
+      localStorage.setItem("activeTaskIndex", activeTaskIndex);
+      renderTasks();
+    }
+  }
+
+  function updateTimerDisplay(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    timerDisplay.innerText = `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  }
+
+  function startTimer() {
+    timerEnd = Date.now() + timerDuration * 1000;
+    isTimerRunning = true;
+    timer = setInterval(() => {
+      const now = Date.now();
+      const remainingTime = Math.floor((timerEnd - now) / 1000);
+      if (remainingTime <= 0) {
+        clearInterval(timer);
+        updateTimerDisplay(0);
+        playBeep();
+        if (tasks[activeTaskIndex]) {
+          tasks[activeTaskIndex].timeSpent += timerDuration;
+          localStorage.setItem("tasks", JSON.stringify(tasks));
+        }
+      } else {
+        updateTimerDisplay(remainingTime);
+      }
+      updateTaskTimes();
+    }, 1000);
+    startStopBtn.innerText = "Stop";
+  }
+
+  function resetTimer() {
+    clearInterval(timer);
+    timerDuration = parseInt(durationInput.value) * 60;
+    updateTimerDisplay(timerDuration);
+    startStopBtn.innerText = "Start";
+  }
+
+  function updateTaskTimes() {
+    if (tasks[activeTaskIndex] && isTimerRunning) {
+      tasks[activeTaskIndex].timeSpent++;
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      renderTasks();
+    }
+  }
+
+  function startTimer() {
+    timerEnd = Date.now() + timerDuration * 1000;
+    isTimerRunning = true;
+    timer = setInterval(() => {
+      const now = Date.now();
+      const remainingTime = Math.floor((timerEnd - now) / 1000);
+      if (remainingTime <= 0) {
+        clearInterval(timer);
+        updateTimerDisplay(0);
+        playBeep();
+        if (tasks[activeTaskIndex]) {
+          tasks[activeTaskIndex].timeSpent += timerDuration;
+          localStorage.setItem("tasks", JSON.stringify(tasks));
+        }
+      } else {
+        updateTimerDisplay(remainingTime);
+      }
+      updateTaskTimes();
+    }, 1000);
+    startStopBtn.innerText = "Stop";
+  }
+
+  function stopTimer() {
+    clearInterval(timer);
+    timerDuration = Math.floor((timerEnd - Date.now()) / 1000);
+    isTimerRunning = false;
+    startStopBtn.innerText = "Start";
+  }
+  let taskLastUpdated = 0;
+
+  function startTimer() {
+    timerEnd = Date.now() + timerDuration * 1000;
+    taskLastUpdated = Date.now();
+    isTimerRunning = true;
+    timer = setInterval(() => {
+      const now = Date.now();
+      const remainingTime = Math.floor((timerEnd - now) / 1000);
+      if (remainingTime <= 0) {
+        clearInterval(timer);
+        updateTimerDisplay(0);
+        playBeep();
+        if (tasks[activeTaskIndex]) {
+          const elapsed = Math.floor((Date.now() - taskLastUpdated) / 1000);
+          tasks[activeTaskIndex].timeSpent += elapsed;
+          localStorage.setItem("tasks", JSON.stringify(tasks));
+          taskLastUpdated = Date.now(); // Reset task last updated time
+        }
+      } else {
+        updateTimerDisplay(remainingTime);
+      }
+      updateTaskTimes();
+    }, 1000);
+    startStopBtn.innerText = "Stop";
+  }
+
+  function stopTimer() {
+    clearInterval(timer);
+    const now = Date.now();
+    timerDuration = Math.floor((timerEnd - now) / 1000);
+    isTimerRunning = false;
+    startStopBtn.innerText = "Start";
+
+    // Update active task's time spent with the accurate elapsed time
+    if (tasks[activeTaskIndex]) {
+      const elapsed = Math.floor((now - taskLastUpdated) / 1000);
+      tasks[activeTaskIndex].timeSpent += elapsed;
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      taskLastUpdated = now; // Reset task last updated time
+    }
+  }
+  function updateTaskTimes() {
+    if (tasks[activeTaskIndex] && isTimerRunning) {
+      const elapsed = Math.floor(
+        (Date.now() - (timerEnd - timerDuration * 1000)) / 1000,
+      );
+      tasks[activeTaskIndex].timeSpent += elapsed;
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      renderTasks();
+    }
+  }
+  function updateTaskTimes() {
+    if (isTimerRunning) {
+      const now = Date.now();
+      const elapsed = Math.floor((now - taskLastUpdated) / 1000);
+      taskLastUpdated = now;
+      tasks[activeTaskIndex].timeSpent += elapsed;
+      localStorage.setItem("tasks", JSON.stringify(tasks));
+      renderTasks();
+    }
+  }
+
+  function playBeep() {
+    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = context.createOscillator();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(440, context.currentTime);
+    oscillator.connect(context.destination);
+    oscillator.start();
+    oscillator.stop(context.currentTime + 1);
+  }
+
+  function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+  }
+
+  function updateTaskName(event, index) {
+    const input = event.target;
+    tasks[index].name = input.value;
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    renderTasks();
+  }
+
+  document.addEventListener("dragover", (event) => {
+    event.preventDefault();
+  });
+
+  document.addEventListener("drop", (event) => {
+    event.preventDefault();
+    const draggedIndex = event.dataTransfer.getData("text/plain");
+    const targetIndex = event.target
+      .closest(".task-item")
+      .getAttribute("data-index");
+    moveTask(draggedIndex, targetIndex);
+  });
+
+  function drag(event) {
+    event.dataTransfer.setData(
+      "text/plain",
+      event.target.getAttribute("data-index"),
+    );
+  }
+
+  function moveTask(draggedIndex, targetIndex) {
+    const draggedTask = tasks.splice(draggedIndex, 1)[0];
+    tasks.splice(targetIndex, 0, draggedTask);
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    if (activeTaskIndex == draggedIndex) {
+      activeTaskIndex = targetIndex;
+    } else if (
+      draggedIndex < activeTaskIndex &&
+      targetIndex >= activeTaskIndex
+    ) {
+      activeTaskIndex--;
+    } else if (
+      draggedIndex > activeTaskIndex &&
+      targetIndex <= activeTaskIndex
+    ) {
+      activeTaskIndex++;
+    }
+    localStorage.setItem("activeTaskIndex", activeTaskIndex);
+    renderTasks();
+  }
+
+  startStopBtn.addEventListener("click", () => {
+    if (startStopBtn.innerText === "Start") {
+      startTimer();
+    } else {
+      stopTimer();
+    }
+  });
+  function renderTasks() {
+    taskListElement.innerHTML = "";
+    tasks.forEach((task, index) => {
+      const taskItem = document.createElement("li");
+      taskItem.className = `task-item ${index == activeTaskIndex ? "active" : ""}`;
+      taskItem.draggable = true;
+      taskItem.ondragstart = drag;
+      taskItem.dataset.index = index;
+
+      const taskNameInput = document.createElement("input");
+      taskNameInput.type = "input";
+      taskNameInput.value = task.name;
+      taskNameInput.onblur = (e) => updateTaskName(e, index);
+      
+      taskNameInput.onkeydown = function (e) {
+        if (e.key === "Enter") {
+          updateTaskName(e, index);
+        }
+      };
+
+      const taskTime = document.createElement("span");
+      taskTime.innerText = ` - ${formatTime(task.timeSpent)}`;
+      taskItem.onclick = () => selectTask(index);
+
+      const taskControls = document.createElement("div");
+      taskControls.className = "task-controls";
+
+      const resetBtn = document.createElement("button");
+      resetBtn.innerText = "Reset Time";
+      resetBtn.onclick = (e) => {
+        e.stopPropagation();
+        resetTaskTime(index);
+      };
+
+      taskControls.appendChild(resetBtn);
+      taskItem.appendChild(taskNameInput);
+      taskItem.appendChild(taskTime);
+      taskItem.appendChild(taskControls);
+      taskListElement.appendChild(taskItem);
+    });
+  }
+
+  resetBtn.addEventListener("click", resetTimer);
+
+  durationInput.addEventListener("change", () => {
+    timerDuration = parseInt(durationInput.value) * 60;
+    resetTimer();
+  });
+function selectTask(index) {
+    activeTaskIndex = index;
+    localStorage.setItem('activeTaskIndex', activeTaskIndex);
+    renderTasks();
+}
+  addTaskBtn.addEventListener("click", addTask);
+
+  renderTasks();
+  updateTimerDisplay(timerDuration);
+});
+
+
+
+    
+
+
+
+
+  </script>
+</head>
+<body>
+    <div id="timer">25:00</div>
+    <button id="startStopBtn">Start</button>
+    <button id="resetBtn">Reset</button>
+    <div>
+        <label for="duration">Timer Duration (minutes):</label>
+        <input type="number" id="duration" value="25" min="1">
+    </div>
+    <ul id="taskList" class="task-list"></ul>
+    <input type="text" id="newTask" placeholder="New task">
+    <button id="addTaskBtn">Add Task</button>
+
+    <script src="pomodoro.js"></script>
+</body>
+</html>
