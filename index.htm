@@ -95,53 +95,7 @@
   let timerEnd;
   let isTimerRunning = false;
 
-  function renderTasks() {
-    taskListElement.innerHTML = "";
-    tasks.forEach((task, index) => {
-      const taskItem = document.createElement("li");
-      taskItem.className = `task-item ${index == activeTaskIndex ? "active" : ""}`;
-      taskItem.innerHTML = `<span>${task.name} - ${formatTime(task.timeSpent)}</span>`;
-      taskItem.onclick = () => selectTask(index);
-
-      const taskControls = document.createElement("div");
-      taskControls.className = "task-controls";
-
-      const editBtn = document.createElement("button");
-      editBtn.innerText = "Edit";
-      editBtn.onclick = (e) => {
-        e.stopPropagation();
-        editTask(index);
-      };
-      taskControls.appendChild(editBtn);
-
-      const resetBtn = document.createElement("button");
-      resetBtn.innerText = "Reset Time";
-      resetBtn.onclick = (e) => {
-        e.stopPropagation();
-        resetTaskTime(index);
-      };
-      taskControls.appendChild(resetBtn);
-
-      const upBtn = document.createElement("button");
-      upBtn.innerText = "↑";
-      upBtn.onclick = (e) => {
-        e.stopPropagation();
-        moveTaskUp(index);
-      };
-      taskControls.appendChild(upBtn);
-
-      const downBtn = document.createElement("button");
-      downBtn.innerText = "↓";
-      downBtn.onclick = (e) => {
-        e.stopPropagation();
-        moveTaskDown(index);
-      };
-      taskControls.appendChild(downBtn);
-
-      taskItem.appendChild(taskControls);
-      taskListElement.appendChild(taskItem);
-    });
-  }
+  
 
   function selectTask(index) {
     activeTaskIndex = index;
@@ -204,33 +158,7 @@
     }
   }
 
-  function updateTimerDisplay(seconds) {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    timerDisplay.innerText = `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
-  }
 
-  function startTimer() {
-    timerEnd = Date.now() + timerDuration * 1000;
-    isTimerRunning = true;
-    timer = setInterval(() => {
-      const now = Date.now();
-      const remainingTime = Math.floor((timerEnd - now) / 1000);
-      if (remainingTime <= 0) {
-        clearInterval(timer);
-        updateTimerDisplay(0);
-        playBeep();
-        if (tasks[activeTaskIndex]) {
-          tasks[activeTaskIndex].timeSpent += timerDuration;
-          localStorage.setItem("tasks", JSON.stringify(tasks));
-        }
-      } else {
-        updateTimerDisplay(remainingTime);
-      }
-      updateTaskTimes();
-    }, 1000);
-    startStopBtn.innerText = "Stop";
-  }
 
   function resetTimer() {
     clearInterval(timer);
@@ -239,42 +167,9 @@
     startStopBtn.innerText = "Start";
   }
 
-  function updateTaskTimes() {
-    if (tasks[activeTaskIndex] && isTimerRunning) {
-      tasks[activeTaskIndex].timeSpent++;
-      localStorage.setItem("tasks", JSON.stringify(tasks));
-      renderTasks();
-    }
-  }
 
-  function startTimer() {
-    timerEnd = Date.now() + timerDuration * 1000;
-    isTimerRunning = true;
-    timer = setInterval(() => {
-      const now = Date.now();
-      const remainingTime = Math.floor((timerEnd - now) / 1000);
-      if (remainingTime <= 0) {
-        clearInterval(timer);
-        updateTimerDisplay(0);
-        playBeep();
-        if (tasks[activeTaskIndex]) {
-          tasks[activeTaskIndex].timeSpent += timerDuration;
-          localStorage.setItem("tasks", JSON.stringify(tasks));
-        }
-      } else {
-        updateTimerDisplay(remainingTime);
-      }
-      updateTaskTimes();
-    }, 1000);
-    startStopBtn.innerText = "Stop";
-  }
 
-  function stopTimer() {
-    clearInterval(timer);
-    timerDuration = Math.floor((timerEnd - Date.now()) / 1000);
-    isTimerRunning = false;
-    startStopBtn.innerText = "Start";
-  }
+
   let taskLastUpdated = 0;
 
   function startTimer() {
@@ -286,7 +181,7 @@
       const remainingTime = Math.floor((timerEnd - now) / 1000);
       if (remainingTime <= 0) {
         clearInterval(timer);
-        updateTimerDisplay(0);
+        timerDisplay.innerText = formatTime(0);
         playBeep();
         if (tasks[activeTaskIndex]) {
           const elapsed = Math.floor((Date.now() - taskLastUpdated) / 1000);
@@ -295,7 +190,7 @@
           taskLastUpdated = Date.now(); // Reset task last updated time
         }
       } else {
-        updateTimerDisplay(remainingTime);
+        timerDisplay.innerText = formatTime(remainingTime);
       }
       updateTaskTimes();
     }, 1000);
@@ -317,16 +212,7 @@
       taskLastUpdated = now; // Reset task last updated time
     }
   }
-  function updateTaskTimes() {
-    if (tasks[activeTaskIndex] && isTimerRunning) {
-      const elapsed = Math.floor(
-        (Date.now() - (timerEnd - timerDuration * 1000)) / 1000,
-      );
-      tasks[activeTaskIndex].timeSpent += elapsed;
-      localStorage.setItem("tasks", JSON.stringify(tasks));
-      renderTasks();
-    }
-  }
+  
   function updateTaskTimes() {
     if (isTimerRunning) {
       const now = Date.now();
@@ -497,7 +383,7 @@ function selectTask(index) {
   addTaskBtn.addEventListener("click", addTask);
 
   renderTasks();
-  updateTimerDisplay(timerDuration);
+  timerDisplay.innerText = formatTime(remainingTime);
 });
 
 
