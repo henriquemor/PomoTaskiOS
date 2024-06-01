@@ -392,56 +392,55 @@
       stopTimer();
     }
   });
-  function renderTasks() {
+
+function renderTasks() {
     taskListElement.innerHTML = "";
     tasks.forEach((task, index) => {
-        const taskItem = document.createElement("li");
-        taskItem.className = `task-item ${index == activeTaskIndex ? "active" : ""}`;
-        taskItem.draggable = true;
-        taskItem.ondragstart = drag;
-        taskItem.dataset.index = index;
+      const taskItem = document.createElement("li");
+      taskItem.className = `task-item ${index == activeTaskIndex ? "active" : ""}`;
+      taskItem.draggable = true;
+      taskItem.ondragstart = drag;
+      taskItem.dataset.index = index;
 
-        const taskNameInput = document.createElement("input");
-        taskNameInput.type = "text";
-        taskNameInput.value = task.name;
-        taskNameInput.onblur = (e) => updateTaskName(e, index);
+      const taskNameInput = document.createElement("input");
+      taskNameInput.type = "input";
+      taskNameInput.value = task.name;
+      taskNameInput.onblur = (e) => updateTaskName(e, index);
       
-        taskNameInput.onkeydown = function (e) {
-            if (e.key === "Enter") {
-                updateTaskName(e, index);
-            }
-        };
+      taskNameInput.onkeydown = function (e) {
+        if (e.key === "Enter") {
+          updateTaskName(e, index);
+        }
+      };
 
-        const taskTime = document.createElement("span");
-        taskTime.innerText = ` ${formatTime(task.timeSpent)}`;
-        taskTime.onclick = () => selectTask(index);
+      const taskTime = document.createElement("span");
+      taskTime.innerText = ` ${formatTime(task.timeSpent)}`;
+      taskTime.onclick = () => selectTask(index);
 
-        const taskControls = document.createElement("div");
-        taskControls.className = "task-controls";
+      const taskControls = document.createElement("div");
+      taskControls.className = "task-controls";
 
-        const resetBtn = document.createElement("button");
-        resetBtn.innerText = "Reset Time";
-        resetBtn.onclick = (e) => {
-            e.stopPropagation();
-            resetTaskTime(index);
-        };
-
-        const deleteBtn = document.createElement("button");
+      const resetBtn = document.createElement("button");
+      resetBtn.innerText = "Reset Time";
+      resetBtn.onclick = (e) => {
+        e.stopPropagation();
+        resetTaskTime(index);
+      };
+      const deleteBtn = document.createElement("button");
         deleteBtn.innerText = "Delete";
         deleteBtn.onclick = (e) => {
             e.stopPropagation();
             deleteTask(index);
         };
 
-        taskControls.appendChild(resetBtn);
-        taskControls.appendChild(deleteBtn);
-        taskItem.appendChild(taskNameInput);
-        taskItem.appendChild(taskTime);
-        taskItem.appendChild(taskControls);
-        taskListElement.appendChild(taskItem);
+      taskControls.appendChild(resetBtn);
+      taskControls.appendChild(deleteBtn);
+      taskItem.appendChild(taskNameInput);
+      taskItem.appendChild(taskTime);
+      taskItem.appendChild(taskControls);
+      taskListElement.appendChild(taskItem);
     });
-}
-
+  }
 function deleteTask(index) {
     tasks.splice(index, 1);
     if (tasks.length === 0) {
@@ -458,34 +457,14 @@ function deleteTask(index) {
     renderTasks();
 }
 
-      const taskTime = document.createElement("span");
-      taskTime.innerText = ` - ${formatTime(task.timeSpent)}`;
-      taskItem.onclick = () => selectTask(index);
-
-      const taskControls = document.createElement("div");
-      taskControls.className = "task-controls";
-
-      const resetBtn = document.createElement("button");
-      resetBtn.innerText = "Reset Time";
-      resetBtn.onclick = (e) => {
-        e.stopPropagation();
-        resetTaskTime(index);
-      };
-
-      taskControls.appendChild(resetBtn);
-      taskItem.appendChild(taskNameInput);
-      taskItem.appendChild(taskTime);
-      taskItem.appendChild(taskControls);
-      taskListElement.appendChild(taskItem);
-    });
-  }
-
-  resetBtn.addEventListener("click", resetTimer);
+resetBtn.addEventListener("click", resetTimer);
 
   durationInput.addEventListener("change", () => {
     timerDuration = parseInt(durationInput.value) * 60;
     resetTimer();
   });
+        
+      
 function selectTask(index) {
     activeTaskIndex = index;
     localStorage.setItem('activeTaskIndex', activeTaskIndex);
