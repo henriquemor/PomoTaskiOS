@@ -25,6 +25,7 @@
         }
         .control button{
             font-size: 2em;
+            margin: .5em
         }
         #timer {
             font-size: 8em;
@@ -38,6 +39,7 @@
         }
         .task-item {
             display: flex;
+            align-items: center;
             justify-content: space-between;
             padding: 10px;
             border: 1px solid #ccc;
@@ -49,6 +51,7 @@
         }
         .task-item span {
             flex-grow: 1;
+            font-weight: bolder;
         }
         .task-controls {
             display: flex;
@@ -56,6 +59,20 @@
         .task-controls button {
             margin-left: 5px;
         }
+
+.task-item input {
+    flex-grow: 1;
+    margin-right: 10px; /* Space between input and time */
+}
+
+.task-item span {
+    margin-right: 10px; /* Space between time and controls */
+}
+
+.task-controls {
+    display: flex;
+    gap: 5px; /* Space between buttons */
+}
     </style>
   <script>
 
