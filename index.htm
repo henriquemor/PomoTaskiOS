@@ -21,6 +21,10 @@
             border:none;
             color: white;
             border-radius: 5px;
+            height: 2em;
+        }
+        .control button{
+            font-size: 2em;
         }
         #timer {
             font-size: 8em;
@@ -391,22 +395,68 @@
   function renderTasks() {
     taskListElement.innerHTML = "";
     tasks.forEach((task, index) => {
-      const taskItem = document.createElement("li");
-      taskItem.className = `task-item ${index == activeTaskIndex ? "active" : ""}`;
-      taskItem.draggable = true;
-      taskItem.ondragstart = drag;
-      taskItem.dataset.index = index;
+        const taskItem = document.createElement("li");
+        taskItem.className = `task-item ${index == activeTaskIndex ? "active" : ""}`;
+        taskItem.draggable = true;
+        taskItem.ondragstart = drag;
+        taskItem.dataset.index = index;
 
-      const taskNameInput = document.createElement("input");
-      taskNameInput.type = "input";
-      taskNameInput.value = task.name;
-      taskNameInput.onblur = (e) => updateTaskName(e, index);
+        const taskNameInput = document.createElement("input");
+        taskNameInput.type = "text";
+        taskNameInput.value = task.name;
+        taskNameInput.onblur = (e) => updateTaskName(e, index);
       
-      taskNameInput.onkeydown = function (e) {
-        if (e.key === "Enter") {
-          updateTaskName(e, index);
+        taskNameInput.onkeydown = function (e) {
+            if (e.key === "Enter") {
+                updateTaskName(e, index);
+            }
+        };
+
+        const taskTime = document.createElement("span");
+        taskTime.innerText = ` ${formatTime(task.timeSpent)}`;
+        taskTime.onclick = () => selectTask(index);
+
+        const taskControls = document.createElement("div");
+        taskControls.className = "task-controls";
+
+        const resetBtn = document.createElement("button");
+        resetBtn.innerText = "Reset Time";
+        resetBtn.onclick = (e) => {
+            e.stopPropagation();
+            resetTaskTime(index);
+        };
+
+        const deleteBtn = document.createElement("button");
+        deleteBtn.innerText = "Delete";
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteTask(index);
+        };
+
+        taskControls.appendChild(resetBtn);
+        taskControls.appendChild(deleteBtn);
+        taskItem.appendChild(taskNameInput);
+        taskItem.appendChild(taskTime);
+        taskItem.appendChild(taskControls);
+        taskListElement.appendChild(taskItem);
+    });
+}
+
+function deleteTask(index) {
+    tasks.splice(index, 1);
+    if (tasks.length === 0) {
+        activeTaskIndex = -1; // No tasks left
+    } else {
+        if (index === activeTaskIndex) {
+            activeTaskIndex = 0; // Set the first task as active if the active task was deleted
+        } else if (index < activeTaskIndex) {
+            activeTaskIndex--; // Adjust active task index if necessary
         }
-      };
+    }
+    localStorage.setItem("tasks", JSON.stringify(tasks));
+    localStorage.setItem("activeTaskIndex", activeTaskIndex);
+    renderTasks();
+}
 
       const taskTime = document.createElement("span");
       taskTime.innerText = ` - ${formatTime(task.timeSpent)}`;
@@ -458,7 +508,7 @@ function selectTask(index) {
 </head>
 <body>
     <div id="timer">25:00</div>
-    <div>
+    <div class="control">
         <button id="startStopBtn">Start</button>
         <button id="resetBtn">Reset</button>
     </div>
